@@ -8,7 +8,7 @@ import random
 import math
 import os
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader 
+from torch.utils.data import DataLoader
 from timm.utils import ModelEmaV3 #pip install timm 
 from tqdm import tqdm #pip install tqdm
 import matplotlib.pyplot as plt #pip install matplotlib
@@ -165,8 +165,13 @@ def train(batch_size: int=64,
     train_dataset = datasets.MNIST(root='./data', train=True, download=True,transform=transforms.ToTensor())
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=0)
 
-    # Use CPU for better compatibility on Mac
-    device = torch.device("cpu")
+    # Use GPU if available, otherwise fallback to CPU
+    print(f"CUDA available: {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        print(f"CUDA device count: {torch.cuda.device_count()}")
+        print(f"Current CUDA device: {torch.cuda.current_device()}")
+        print(f"CUDA device name: {torch.cuda.get_device_name()}")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
     scheduler = DDPM_Scheduler(num_time_steps=num_time_steps)
@@ -225,8 +230,13 @@ def display_reverse(images: List):
 def inference(checkpoint_path: str=None,
             num_time_steps: int=1000,
             ema_decay: float=0.9999, ):
-    # Use CPU for better compatibility on Mac
-    device = torch.device("cpu")
+    # Use GPU if available, otherwise fallback to CPU
+    print(f"CUDA available: {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        print(f"CUDA device count: {torch.cuda.device_count()}")
+        print(f"Current CUDA device: {torch.cuda.current_device()}")
+        print(f"CUDA device name: {torch.cuda.get_device_name()}")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
     checkpoint = torch.load(checkpoint_path, map_location=device)
