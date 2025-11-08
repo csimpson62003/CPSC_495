@@ -34,10 +34,10 @@ def main():
     config = {
         'checkpoint_path': checkpoint_path,
         'batch_size': 8,              # Reduce if you get OOM errors
-        'num_epochs': 1500,            # Number of training epochs
+        'num_epochs': 2500,            # Number of training epochs
         'lr': 1e-4,                   # Learning rate
-        'num_time_steps': 1000,       # Diffusion timesteps
-        'max_dataset_size': 200,     # Set to a number (e.g., 1000) to limit dataset size for testing
+        'num_time_steps': 1500,       # Diffusion timesteps
+        'max_dataset_size': 400,     # Set to a number (e.g., 1000) to limit dataset size for testing
         'save_every_n_epochs': 3000,    # Save checkpoint every N epochs
         'push_to_github': False        # Push checkpoints to GitHub (requires git configured)
     }
