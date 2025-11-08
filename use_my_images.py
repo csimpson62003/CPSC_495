@@ -10,8 +10,8 @@ import os
 
 def simple_face_swap():
     # Update these paths to your images
-    source_face = "my_photos/person1.jpg"
-    target_person = "my_photos/person2.jpg"
+    source_face = "my_photos/person1.png"
+    target_person = "my_photos/sue.png"
     output_file = "my_face_swap_result.png"
     
     print(f"📸 Taking face from: {source_face}")
@@ -34,11 +34,13 @@ def simple_face_swap():
             source_image_path=source_face,
             target_image_path=target_person,
             checkpoint_path='checkpoints/ddpm_faceswap_checkpoint',
-            num_denoising_steps=50,
+            num_denoising_steps=50,  # Reduced back to 50 for testing
             save_result=output_file
         )
         
         print(f"✅ SUCCESS! Check your result: {output_file}")
+        print(f"📁 High-res result: {output_file}")
+        print(f"📁 Comparison: {output_file.replace('.png', '_comparison.png')}")
         
     except FileNotFoundError as e:
         print(f"❌ Model file not found: {e}")

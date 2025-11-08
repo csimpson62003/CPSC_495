@@ -10,7 +10,6 @@ import torch.optim as optim
 import os
 import random
 import subprocess
-import kagglehub
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from timm.utils import ModelEmaV3
@@ -36,6 +35,7 @@ def train(batch_size: int=64,
     set_seed(random.randint(0, 2**32-1)) if seed == -1 else set_seed(seed)
 
     # Download face-swap dataset from Kaggle
+    import kagglehub
     dataset_path = kagglehub.dataset_download("rdjarbeng/face-swap-images")
     print(f"Dataset downloaded to: {dataset_path}")
     
