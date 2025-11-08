@@ -134,9 +134,9 @@ def swap_faces(source_image_path: str,
     source_tensor_hr = load_and_preprocess_image(source_image_path, size=512).to(device)
     target_tensor_hr = load_and_preprocess_image(target_image_path, size=512).to(device)
     
-    # Also load at model resolution (64x64) for processing
-    source_tensor = load_and_preprocess_image(source_image_path, size=64).to(device)
-    target_tensor = load_and_preprocess_image(target_image_path, size=64).to(device)
+    # Load at model resolution (128x128 for processing - matches training)
+    source_tensor = load_and_preprocess_image(source_image_path, size=128).to(device)
+    target_tensor = load_and_preprocess_image(target_image_path, size=128).to(device)
     
     # Perform face swap using diffusion model
     print("🔄 Performing face swap...")

@@ -48,7 +48,7 @@ def train(batch_size: int=64,
     train_dataset = FaceSwapDataset(
         dataset_path, 
         split="train", 
-        image_size=64,
+        image_size=128,  # Increased from 64 for sharper results
         max_pairs=max_dataset_size
     )
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=0)
