@@ -37,7 +37,7 @@ def main():
         'num_epochs': 200,            # Number of training epochs
         'lr': 1e-4,                   # Learning rate
         'num_time_steps': 1000,       # Diffusion timesteps
-        'max_dataset_size': None,     # Set to a number (e.g., 1000) to limit dataset size for testing
+        'max_dataset_size': 200,     # Set to a number (e.g., 1000) to limit dataset size for testing
         'save_every_n_epochs': 10,    # Save checkpoint every N epochs
         'push_to_github': True        # Push checkpoints to GitHub (requires git configured)
     }
