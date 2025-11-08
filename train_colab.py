@@ -34,7 +34,7 @@ def main():
     config = {
         'checkpoint_path': checkpoint_path,
         'batch_size': 8,              # Reduce if you get OOM errors
-        'num_epochs': 200,            # Number of training epochs
+        'num_epochs': 1500,            # Number of training epochs
         'lr': 1e-4,                   # Learning rate
         'num_time_steps': 1000,       # Diffusion timesteps
         'max_dataset_size': 200,     # Set to a number (e.g., 1000) to limit dataset size for testing
