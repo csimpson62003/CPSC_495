@@ -28,7 +28,7 @@ from .unet_layer import UnetLayer
 from .train import train
 from .inference import inference
 from .utils import set_seed, setup_cuda_device, display_reverse
-from .face_swapper import swap_faces, batch_face_swap, example_usage
+from .face_swapper import swap_faces, batch_face_swap
 
 __all__ = [
     'FaceSwapDataset',
@@ -44,6 +44,5 @@ __all__ = [
     'setup_cuda_device',
     'display_reverse',
     'swap_faces',
-    'batch_face_swap',
-    'example_usage'
+    'batch_face_swap'
 ]

@@ -1,0 +1,2 @@
+# This file ensures the checkpoints directory is tracked by git
+# The trained models will be saved here after running train_colab.py

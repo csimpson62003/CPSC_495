@@ -1,3 +1,3 @@
 data/*
 __pycache__/
-checkpoints/
+# Note: checkpoints/ is NOT ignored so training progress can be saved to GitHub

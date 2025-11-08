@@ -1,25 +1,7 @@
 """
-MAIN TRAINING FUNCTION FOR DIFFUSION MODEL
-==========================================
+Training Function for Face-Swap Diffusion Model
+===============================================
 Trains the U-Net to predict noise added to images at various timesteps.
-
-TRAINING PROCESS:
-1. Load and preprocess training images
-2. For each image: randomly sample a timestep t
-3. Add noise to the image according to timestep t
-4. Train model to predict the added noise
-5. Use predicted noise to calculate loss and update weights
-
-PARAMETERS:
-- max_dataset_size: Limit how many image pairs to train on (None = all ~7000 pairs)
-  Examples: 100 (quick test), 1000 (medium training), None (full dataset)
-
-FACE-SWAPPING TRAINING ADAPTATIONS NEEDED:
-- Replace MNIST with face datasets (CelebA-HQ, FFHQ)
-- Add identity conditioning inputs  
-- Include face alignment preprocessing
-- Add perceptual losses for better face quality
-- Implement progressive training for high-resolution faces
 """
 
 import torch
@@ -27,6 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 import os
 import random
+import subprocess
 import kagglehub
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -45,19 +28,18 @@ def train(batch_size: int=64,
       ema_decay: float=0.9999,  
       lr=2e-5,
       checkpoint_path: str=None,
-      max_dataset_size: int=None):
+      max_dataset_size: int=None,
+      save_every_n_epochs: int=10,
+      push_to_github: bool=False):
     
-    # STEP 1: SET UP REPRODUCIBILITY
     # Set random seed for reproducibility
     set_seed(random.randint(0, 2**32-1)) if seed == -1 else set_seed(seed)
 
-    # STEP 2: DOWNLOAD AND LOAD FACE-SWAP DATASET
-    # Download the face-swap dataset from Kaggle
+    # Download face-swap dataset from Kaggle
     dataset_path = kagglehub.dataset_download("rdjarbeng/face-swap-images")
     print(f"Dataset downloaded to: {dataset_path}")
     
     # Create face-swap dataset and dataloader
-    # max_dataset_size controls how many of the 7000 pairs to use for training
     if max_dataset_size is not None:
         print(f"🎯 Training on {max_dataset_size} image pairs (out of ~7000 available)")
     else:
@@ -66,21 +48,21 @@ def train(batch_size: int=64,
     train_dataset = FaceSwapDataset(
         dataset_path, 
         split="train", 
-        image_size=64,  # Start with 64x64 for testing
-        max_pairs=max_dataset_size  # Limit dataset size if specified
+        image_size=64,
+        max_pairs=max_dataset_size
     )
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=0)
 
-    # STEP 3: SET UP GPU/CPU DEVICE
-    device = setup_cuda_device(preferred_gpu=0)  # Use RTX 2080 Super (GPU 0)
+    # Set up device
+    device = setup_cuda_device(preferred_gpu=0)
     
-    # STEP 4: INITIALIZE ALL MODEL COMPONENTS
-    scheduler = DDPM_Scheduler(num_time_steps=num_time_steps)  # Noise schedule manager
-    model = UNET().to(device)                                  # Main denoising network
-    optimizer = optim.Adam(model.parameters(), lr=lr)          # Adam optimizer
-    ema = ModelEmaV3(model, decay=ema_decay)                  # Exponential moving average for stable training
+    # Initialize model components
+    scheduler = DDPM_Scheduler(num_time_steps=num_time_steps)
+    model = UNET().to(device)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    ema = ModelEmaV3(model, decay=ema_decay)
     
-    # STEP 5: LOAD EXISTING CHECKPOINT (if it exists)
+    # Load existing checkpoint if it exists
     if checkpoint_path is not None and os.path.exists(checkpoint_path):
         print(f"Loading checkpoint from {checkpoint_path}")
         checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
@@ -90,69 +72,73 @@ def train(batch_size: int=64,
     else:
         print("Starting training from scratch")
     
-    # Ensure scheduler is on correct device
     scheduler = scheduler.to(device)
-    
-    # Loss function for comparing predicted vs actual noise
     criterion = nn.MSELoss(reduction='mean')
 
-    # STEP 6: MAIN TRAINING LOOP
+    # Main training loop
     for i in range(num_epochs):
         total_loss = 0
         
-        # Process each batch of face-swap data
         for bidx, batch_data in enumerate(tqdm(train_loader, desc=f"Epoch {i+1}/{num_epochs}")):
-            # STEP 6a: EXTRACT FACE IMAGES FROM BATCH
-            # Extract face images from batch dictionary
-            # For face-swapping, we train the model to generate the 'altered' (face-swapped) image
-            # from the 'original' image by learning to remove noise
-            original_faces = batch_data['original'].to(device)  # Source faces
-            altered_faces = batch_data['altered'].to(device)    # Target face-swapped results
+            # Extract face images from batch
+            original_faces = batch_data['original'].to(device)
+            altered_faces = batch_data['altered'].to(device)
             
-            # For diffusion training, we use the altered (face-swapped) images as our target
-            # The model learns to generate face-swapped results by denoising
+            # Train on altered (face-swapped) images
             x = altered_faces
             
-            # STEP 6b: DIFFUSION TRAINING STEP
-            # 1. Sample random timesteps for each image in the batch
+            # Diffusion training step
             t = torch.randint(0, num_time_steps, (batch_size,), device=device)
-            
-            # 2. Sample random noise to add to images
             e = torch.randn_like(x, requires_grad=False)
-            
-            # 3. Get noise schedule parameter for sampled timesteps
             a = scheduler.alpha[t].view(batch_size, 1, 1, 1)
             
-            # 4. Add noise to images according to diffusion formula
-            # x_t = sqrt(alpha_t) * x_0 + sqrt(1 - alpha_t) * noise
+            # Add noise: x_t = sqrt(alpha_t) * x_0 + sqrt(1 - alpha_t) * noise
             x = (torch.sqrt(a) * x) + (torch.sqrt(1 - a) * e)
             
-            # 5. Train model to predict the noise that was added
+            # Train model to predict the noise
             output = model(x, t)
             
-            # STEP 6c: BACKPROPAGATION
+            # Backpropagation
             optimizer.zero_grad()
-            
-            # Calculate loss: how well did model predict the noise?
             loss = criterion(output, e)
             total_loss += loss.item()
-            
-            # Update model weights
             loss.backward()
             optimizer.step()
-            
-            # Update exponential moving average (stabilizes training)
             ema.update(model)
         
         # Print epoch statistics
         avg_loss = total_loss / len(train_loader)
         print(f'Epoch {i+1} | Loss {avg_loss:.5f} | Processed {len(train_dataset)} face-swap pairs')
+        
+        # Save checkpoint periodically and push to GitHub
+        if (i + 1) % save_every_n_epochs == 0 or (i + 1) == num_epochs:
+            checkpoint = {
+                'weights': model.state_dict(),
+                'optimizer': optimizer.state_dict(), 
+                'ema': ema.state_dict(),
+                'epoch': i + 1,
+                'loss': avg_loss
+            }
+            torch.save(checkpoint, checkpoint_path)
+            print(f"📁 Checkpoint saved to {checkpoint_path}")
+            
+            if push_to_github:
+                print("📤 Pushing checkpoint to GitHub...")
+                try:
+                    # Add and commit checkpoint
+                    subprocess.run(['git', 'add', checkpoint_path], check=True)
+                    subprocess.run(['git', 'commit', '-m', f'Training checkpoint: epoch {i+1}, loss {avg_loss:.5f}'], check=True)
+                    subprocess.run(['git', 'push'], check=True)
+                    print("✅ Checkpoint pushed to GitHub successfully!")
+                except subprocess.CalledProcessError as e:
+                    print(f"⚠️  Failed to push to GitHub: {e}")
+                    print("   Continuing training...")
 
-    # STEP 7: SAVE TRAINED MODEL
+    # Save final model
     checkpoint = {
-        'weights': model.state_dict(),      # Model parameters
-        'optimizer': optimizer.state_dict(), # Optimizer state  
-        'ema': ema.state_dict()            # EMA parameters (used for generation)
+        'weights': model.state_dict(),
+        'optimizer': optimizer.state_dict(), 
+        'ema': ema.state_dict()
     }
     torch.save(checkpoint, checkpoint_path)
     print(f"Model saved to {checkpoint_path}")
