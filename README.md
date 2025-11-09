@@ -1,6 +1,6 @@
-# Face-Swapping Diffusion Model
+# Image Inpainting with Diffusion Models
 
-A PyTorch implementation of a face-swapping model using diffusion models.
+A PyTorch implementation of an image inpainting model using denoising diffusion probabilistic models (DDPM). The model learns to fill in missing or masked regions of images by training on the CelebA face dataset.
 
 ## Quick Start for Google Colab
 
@@ -15,82 +15,107 @@ A PyTorch implementation of a face-swapping model using diffusion models.
 !pip install -r requirements.txt
 ```
 
-### 3. Configure Git (IMPORTANT - Protects Your Progress!)
+### 3. Train the Model
 ```bash
-!python setup_colab.py
-```
-
-This will prompt you for:
-- GitHub username
-- GitHub email
-- GitHub Personal Access Token (get one at https://github.com/settings/tokens)
-
-**Why?** Training checkpoints will be automatically pushed to GitHub every 10 epochs. If Colab disconnects, your progress is saved!
-
-### 4. Train the Model
-```bash
-!python train_colab.py
+!python train_inpainting_colab.py
 ```
 
 This will:
-- Download the face-swap dataset from Kaggle (~7000 image pairs)
-- Train the diffusion model
-- Save checkpoints to `checkpoints/` every 10 epochs
-- **Automatically push checkpoints to GitHub** (if configured in step 3)
+- Download the CelebA dataset from Kaggle (~200k face images)
+- Train the mask-conditioned diffusion model
+- Save checkpoints to `checkpoints/` every 100 epochs
+- Train at 128x128 resolution (upscaled to 512x512 during inference)
 
 Training typically takes several hours depending on your hardware.
 
-## Usage After Training
-
-### Face Swap with Your Own Images
-
-1. Upload your images to the `my_photos/` folder
-2. Edit `use_my_images.py` to point to your image paths
-3. Run:
+### 4. Use the Trained Model
 ```bash
-!python use_my_images.py
+!python inpaint.py
 ```
 
-Or use `main.py`:
-```bash
-!python main.py
-```
+This demo script will:
+- Load an image from `my_photos/`
+- Create a random mask (or use a provided mask)
+- Fill in the masked region using the trained model
+- Display before/after comparison
+- Upscale result to 512x512
+
+## How It Works
+
+The model uses a **mask-conditioned U-Net** that takes:
+- **Masked Image**: Original image with missing regions (black pixels)
+- **Binary Mask**: White = keep original, Black = fill in
+- **Timestep**: Current diffusion timestep
+
+During training:
+- Random masks are generated (rectangles, circles, brush strokes)
+- The model learns to denoise only the masked regions
+- Loss is computed only on masked pixels
+- EMA (Exponential Moving Average) weights for stability
+
+During inference:
+- The model iteratively denoises the masked region
+- Known pixels are preserved at each step
+- Result is upscaled from 128x128 to 512x512
 
 ## Training Configuration
 
-You can adjust training parameters in `train_colab.py`:
-- `batch_size`: Reduce if you get out-of-memory errors (default: 8)
-- `num_epochs`: Number of training epochs (default: 200)
+Adjust parameters in `train_inpainting_colab.py`:
+- `batch_size`: Default 32 (reduce if out-of-memory)
+- `num_epochs`: Default 2000
 - `lr`: Learning rate (default: 1e-4)
-- `max_dataset_size`: Limit dataset size for testing (default: None = all data)
-- `save_every_n_epochs`: Save checkpoint every N epochs (default: 10)
-- `push_to_github`: Auto-push checkpoints to GitHub (default: True)
+- `image_size`: Training resolution (default: 128)
+- `save_every_n_epochs`: Save checkpoint interval (default: 100)
 
-### Resume Training After Disconnect
+## Usage Examples
 
-If Colab disconnects, simply:
-1. Clone the repo again (or reconnect)
-2. Run `!python train_colab.py`
+### Basic Inpainting
+```python
+from main.inpainting_inference import inpaint_image
 
-The training will automatically resume from the last saved checkpoint!
+# Load image and mask
+image_path = "my_photos/face.jpg"
+mask_path = "my_photos/mask.png"  # White=keep, Black=fill
+
+# Inpaint
+result = inpaint_image(
+    image_path=image_path,
+    mask_path=mask_path,
+    checkpoint_path="checkpoints/inpainting_epoch_2000.pth",
+    output_size=512
+)
+```
+
+### Auto-Generate Mask
+```python
+# The demo script can auto-create masks:
+!python inpaint.py  # Creates random mask automatically
+```
+
+Mask types:
+- `center`: Rectangle in center
+- `random`: Random rectangles
+- `strokes`: Random brush strokes
 
 ## Project Structure
 
 ```
 CPSC_495/
-├── main.py                    # Main script with different modes
-├── train_colab.py            # Simple training script for Colab
-├── use_my_images.py          # Simple face swap script
-├── requirements.txt          # Python dependencies
-├── my_photos/                # Put your images here
-├── checkpoints/              # Trained models saved here
-└── main/                     # Core model components
-    ├── train.py              # Training logic
-    ├── inference.py          # Image generation
-    ├── face_swapper.py       # Face swapping functions
-    ├── unet.py               # U-Net architecture
-    ├── ddpm_scheduler.py     # Diffusion scheduler
-    └── ...                   # Other components
+├── train_inpainting_colab.py  # Training script for Colab
+├── inpaint.py                  # Demo inference script
+├── requirements.txt            # Python dependencies
+├── my_photos/                  # Put your test images here
+├── checkpoints/                # Trained models saved here
+└── main/                       # Core model components
+    ├── inpainting_dataset.py   # Dataset with mask generation
+    ├── inpainting_unet.py      # Mask-conditioned U-Net
+    ├── train_inpainting.py     # Training logic
+    ├── inpainting_inference.py # Inference logic
+    ├── unet.py                 # Base U-Net architecture
+    ├── ddpm_scheduler.py       # DDPM noise scheduler
+    ├── attention.py            # Attention mechanisms
+    ├── res_block.py            # Residual blocks
+    └── ...                     # Other components
 ```
 
 ## Requirements
@@ -105,19 +130,29 @@ CPSC_495/
 - numpy
 - kagglehub
 
+## Technical Details
+
+### Architecture
+- **Base**: U-Net with attention mechanisms and residual blocks
+- **Conditioning**: Concatenates masked image + binary mask in parallel branches
+- **Resolution**: Trains at 128x128, upscales to 512x512 with bicubic interpolation
+- **Timesteps**: 1000 diffusion steps
+
+### Training
+- **Dataset**: CelebA (~200k face images)
+- **Optimizer**: Adam with learning rate 1e-4
+- **Loss**: MSE computed only on masked regions
+- **Stability**: EMA weights with decay 0.995
+
+### Mask Generation
+The dataset automatically creates diverse masks:
+- **Rectangles**: Random position and size (20-80% of image)
+- **Circles**: Random center and radius
+- **Brush Strokes**: Multiple curved strokes with random width
+
 ## Notes
 
-- The model works with 64x64 resolution images
-- Images are automatically resized during preprocessing
-- Training uses the face-swap dataset from Kaggle
-- GPU recommended for training (CPU will be very slow)
-
-## Modes
-
-The model supports three modes (set in `main.py`):
-
-1. **face_swap**: Swap faces between two images
-2. **train**: Train the model from scratch
-3. **generate**: Generate random face images
-
-For Google Colab training, use `train_colab.py` instead.
+- GPU strongly recommended (CPU training will be extremely slow)
+- The model preserves known pixel values during inference
+- Larger masks are more challenging to fill convincingly
+- Training for 2000+ epochs recommended for best quality

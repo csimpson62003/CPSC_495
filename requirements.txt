@@ -5,3 +5,5 @@ timm
 tqdm
 matplotlib
 numpy
+kagglehub
+pillow

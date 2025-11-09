@@ -3,11 +3,6 @@ Google Colab Training Script
 ============================
 Simple script to train the face-swapping model after cloning the repo.
 
-Usage in Google Colab:
-1. Clone this repository
-2. Install dependencies: !pip install -r requirements.txt
-3. Run this script: !python train_colab.py
-
 This will:
 - Download the face-swap dataset from Kaggle
 - Train the diffusion model
@@ -55,13 +50,8 @@ def main():
     train(**config)
     
     print("\n" + "=" * 60)
-    print("✅ Training Complete!")
-    print(f"📁 Model saved to: {checkpoint_path}")
-    print("=" * 60)
-    print("\n💡 Next steps:")
-    print("   1. Use main.py or use_my_images.py to perform face swaps")
-    print("   2. Put your images in my_photos/ folder")
-    print("   3. Run the face swap script")
+    print("Training Complete!")
+
 
 
 if __name__ == "__main__":
