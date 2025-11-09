@@ -24,8 +24,8 @@ def main():
     
     config = {
         'checkpoint_path': checkpoint_path,
-        'batch_size': 128,             # A100 High RAM can handle large batches
-        'num_epochs': 50,              # Quick test - see results in ~30-45 min
+        'batch_size': 32,              # Balanced for A100 with attention layers
+        'num_epochs': 50,              # Quick test - see results in ~45-60 min
         'lr': 1e-4,                    # Learning rate
         'num_time_steps': 1000,        # Diffusion timesteps
         'max_dataset_size': 50000,     # Use 50k images for faster initial training
@@ -40,9 +40,9 @@ def main():
     print("   - Resolution: 128x128")
     print("   - Dataset: CelebA faces (50k images for quick test)")
     print("   - Random masks: rectangles, circles, strokes")
-    print("   - Time: ~30-45 minutes on A100 GPU (50 epochs)")
+    print("   - Time: ~45-60 minutes on A100 GPU (50 epochs)")
     print("   - Checkpoint saved every 10 epochs")
-    print("   - Batch size: 128 (optimized for A100 High RAM)")
+    print("   - Batch size: 32 (attention layers are memory-intensive)")
     print("\n   💡 For production quality: train 300-500 epochs on full dataset")
     
     print("\n🎓 Starting training...")
