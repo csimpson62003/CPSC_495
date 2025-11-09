@@ -24,11 +24,11 @@ def main():
     
     config = {
         'checkpoint_path': checkpoint_path,
-        'batch_size': 32,              # Balanced for A100 with attention layers
-        'num_epochs': 50,              # Quick test - see results in ~45-60 min
+        'batch_size': 8,               # Optimized for L4 GPU (22GB)
+        'num_epochs': 50,              # Quick test - see results in ~2 hours
         'lr': 1e-4,                    # Learning rate
         'num_time_steps': 1000,        # Diffusion timesteps
-        'max_dataset_size': 50000,     # Use 50k images for faster initial training
+        'max_dataset_size': 5000,     # Use 50k images for faster initial training
         'save_every_n_epochs': 10      # Save every 10 epochs for testing
     }
     
@@ -40,10 +40,11 @@ def main():
     print("   - Resolution: 128x128")
     print("   - Dataset: CelebA faces (50k images for quick test)")
     print("   - Random masks: rectangles, circles, strokes")
-    print("   - Time: ~45-60 minutes on A100 GPU (50 epochs)")
+    print("   - Time: ~2 hours on L4 GPU (50 epochs)")
     print("   - Checkpoint saved every 10 epochs")
-    print("   - Batch size: 32 (attention layers are memory-intensive)")
+    print("   - Batch size: 8 (optimized for L4's 22GB memory)")
     print("\n   💡 For production quality: train 300-500 epochs on full dataset")
+    print("   💡 Upgrade to A100 for 4x faster training")
     
     print("\n🎓 Starting training...")
     print("   The model will learn to:")
