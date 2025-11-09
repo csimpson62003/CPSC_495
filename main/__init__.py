@@ -1,11 +1,12 @@
 """
-FACE-SWAPPING DIFFUSION MODEL PACKAGE
-====================================
-This package contains all the components for a face-swapping diffusion model.
+IMAGE INPAINTING DIFFUSION MODEL PACKAGE
+========================================
+This package contains all the components for an image inpainting diffusion model.
 
 Core Components:
-- FaceSwapDataset: Loads and processes face-swap training data
-- UNET: The main neural network that learns to remove noise
+- InpaintingDataset: Loads images and generates random masks
+- InpaintingUNET: Mask-conditioned U-Net for inpainting
+- UNET: Base U-Net architecture
 - DDPM_Scheduler: Manages the noise schedule for training and generation
 - SinusoidalEmbeddings: Time encoding for the diffusion process
 - ResBlock: Residual blocks for the U-Net architecture
@@ -13,36 +14,35 @@ Core Components:
 - UnetLayer: Individual layers of the U-Net
 
 Training & Inference:
-- train: Main training function
-- inference: Image generation function
+- train_inpainting: Main training function for inpainting
+- inpaint_image: Image inpainting function
 - utils: Helper functions for setup and visualization
 """
 
-from .face_swap_dataset import FaceSwapDataset
+from .inpainting_dataset import CelebAInpaintingDataset
+from .inpainting_unet import InpaintingUNET
 from .unet import UNET
 from .ddpm_scheduler import DDPM_Scheduler
 from .sinusoidal_embeddings import SinusoidalEmbeddings
 from .res_block import ResBlock
 from .attention import Attention
 from .unet_layer import UnetLayer
-from .train import train
-from .inference import inference
+from .train_inpainting import train_inpainting
+from .inpainting_inference import inpaint_image
 from .utils import set_seed, setup_cuda_device, display_reverse
-from .face_swapper import swap_faces, batch_face_swap
 
 __all__ = [
-    'FaceSwapDataset',
+    'CelebAInpaintingDataset',
+    'InpaintingUNET',
     'UNET', 
     'DDPM_Scheduler',
     'SinusoidalEmbeddings',
     'ResBlock',
     'Attention', 
     'UnetLayer',
-    'train',
-    'inference',
+    'train_inpainting',
+    'inpaint_image',
     'set_seed',
     'setup_cuda_device',
-    'display_reverse',
-    'swap_faces',
-    'batch_face_swap'
+    'display_reverse'
 ]
