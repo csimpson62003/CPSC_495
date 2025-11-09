@@ -28,7 +28,7 @@ def main():
         'num_epochs': 50,              # Quick test - see results in ~2 hours
         'lr': 1e-4,                    # Learning rate
         'num_time_steps': 1000,        # Diffusion timesteps
-        'max_dataset_size': 5000,     # Use 50k images for faster initial training
+        'max_dataset_size': 500,     # Use 50k images for faster initial training
         'save_every_n_epochs': 10      # Save every 10 epochs for testing
     }
     
