@@ -28,7 +28,7 @@ def main():
         'num_epochs': 600,             # Long training for good quality
         'lr': 1e-4,                    # Learning rate
         'num_time_steps': 1000,        # Diffusion timesteps
-        'max_dataset_size': None,      # Use full dataset (~200k images)
+        'max_dataset_size': 4000,      # Use 4000 images for faster initial training
         'save_every_n_epochs': 50,     # Save every 50 epochs
         'image_size': 64               # Train on 64x64 images (faster)
     }
