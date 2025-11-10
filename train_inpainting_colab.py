@@ -24,12 +24,13 @@ def main():
     
     config = {
         'checkpoint_path': checkpoint_path,
-        'batch_size': 8,               # Optimized for L4 GPU (22GB)
-        'num_epochs': 50,              # Quick test - see results in ~2 hours
+        'batch_size': 32,              # Can use larger batch with 64x64
+        'num_epochs': 600,             # Long training for good quality
         'lr': 1e-4,                    # Learning rate
         'num_time_steps': 1000,        # Diffusion timesteps
-        'max_dataset_size': 500,     # Use 50k images for faster initial training
-        'save_every_n_epochs': 10      # Save every 10 epochs for testing
+        'max_dataset_size': None,      # Use full dataset (~200k images)
+        'save_every_n_epochs': 50,     # Save every 50 epochs
+        'image_size': 64               # Train on 64x64 images (faster)
     }
     
     print("\n📋 Configuration:")
@@ -37,14 +38,15 @@ def main():
         print(f"   {key}: {value}")
     
     print("\n⚠️  Training Details:")
-    print("   - Resolution: 128x128")
-    print("   - Dataset: CelebA faces (50k images for quick test)")
+    print("   - Resolution: 64x64 (pixelated for fast testing)")
+    print("   - Dataset: CelebA faces (full dataset)")
+    print("   - Epochs: 600")
     print("   - Random masks: rectangles, circles, strokes")
-    print("   - Time: ~2 hours on L4 GPU (50 epochs)")
-    print("   - Checkpoint saved every 10 epochs")
-    print("   - Batch size: 8 (optimized for L4's 22GB memory)")
-    print("\n   💡 For production quality: train 300-500 epochs on full dataset")
-    print("   💡 Upgrade to A100 for 4x faster training")
+    print("   - Time: Much faster on L4 GPU with 64x64")
+    print("   - Checkpoint saved every 50 epochs")
+    print("   - Batch size: 32 (optimized for smaller images)")
+    print("\n   💡 64x64 images allow quick testing with pixelated results")
+    print("   💡 Upgrade to A100 for faster training")
     
     print("\n🎓 Starting training...")
     print("   The model will learn to:")

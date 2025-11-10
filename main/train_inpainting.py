@@ -28,7 +28,8 @@ def train_inpainting(
       lr=1e-4,
       checkpoint_path: str=None,
       max_dataset_size: int=None,
-      save_every_n_epochs: int=100):
+      save_every_n_epochs: int=100,
+      image_size: int=128):
     """
     Train image inpainting model.
     
@@ -51,7 +52,7 @@ def train_inpainting(
     print("📂 Loading images and creating masks...")
     train_dataset = CelebAInpaintingDataset(
         dataset_path=os.path.join(dataset_path, "img_align_celeba"),
-        image_size=128,
+        image_size=image_size,
         max_images=max_dataset_size
     )
     

@@ -4,8 +4,10 @@ Image Inpainting - Fill Missing Regions
 Use YOUR trained diffusion model to fill in masked regions of images.
 """
 
-from main.inpainting_inference import inpaint_image
 import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # Better error messages
+
+from main.inpainting_inference import inpaint_image
 from PIL import Image, ImageDraw
 import numpy as np
 

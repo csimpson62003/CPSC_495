@@ -65,14 +65,29 @@ def inpaint_image(image_path: str,
     device = setup_cuda_device(preferred_gpu=0)
     
     print("📥 Loading trained model...")
-    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    model = InpaintingUNET().to(device)
-    model.load_state_dict(checkpoint['weights'])
+    try:
+        checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    except:
+        # Try with weights_only=True for older checkpoints
+        checkpoint = torch.load(checkpoint_path, map_location=device)
     
-    # Use EMA weights
-    ema = ModelEmaV3(model, decay=0.9999)
-    ema.load_state_dict(checkpoint['ema'])
-    model = ema.module.eval()
+    model = InpaintingUNET().to(device)
+    
+    # Try loading state dict with strict=False to handle mismatches
+    try:
+        model.load_state_dict(checkpoint['weights'])
+    except RuntimeError as e:
+        print(f"⚠️  Warning: Some weights didn't load: {e}")
+        print("   Attempting partial load...")
+        model.load_state_dict(checkpoint['weights'], strict=False)
+    
+    # Use EMA weights if available
+    if 'ema' in checkpoint:
+        ema = ModelEmaV3(model, decay=0.9999)
+        ema.load_state_dict(checkpoint['ema'])
+        model = ema.module.eval()
+    else:
+        model = model.eval()
     
     scheduler = DDPM_Scheduler(num_time_steps=1000).to(device)
     
@@ -80,6 +95,9 @@ def inpaint_image(image_path: str,
     print("🖼️ Loading image and mask...")
     image = load_and_preprocess_image(image_path, size=128).to(device)
     mask = load_mask(mask_path, size=128).to(device)
+    
+    print(f"   Image shape: {image.shape}")
+    print(f"   Mask shape: {mask.shape}")
     
     # Apply mask to image (set masked regions to 0)
     masked_image = image * mask
@@ -101,12 +119,16 @@ def inpaint_image(image_path: str,
         
         # Denoise step by step
         step_size = max(1, 1000 // num_denoising_steps)
-        timesteps = list(range(1000, 0, -step_size))
+        timesteps = list(range(999, 0, -step_size))  # 999 not 1000 (0-indexed)
         
         for i, t_val in enumerate(timesteps):
             t = torch.tensor([t_val], device=device)
             
             # Predict noise CONDITIONED on mask
+            # Debug shapes
+            if i == 0:
+                print(f"   Input to model - x*mask shape: {(x * mask).shape}, mask shape: {mask.shape}")
+            
             predicted_noise = model(x * mask, t, mask)
             
             # Get alpha
@@ -185,7 +207,7 @@ def display_results(original, masked, mask, result, save_path=None):
         axes[0, 1].set_title('Masked (Input)', fontsize=14)
         axes[0, 1].axis('off')
         
-        axes[1, 0].imshow(mask_display, cmap='gray')
+        axes[1, 0].imshow(mask_display, cmap='gray', interpolation='nearest')
         axes[1, 0].set_title('Mask (white=keep, black=fill)', fontsize=14)
         axes[1, 0].axis('off')
         
@@ -208,7 +230,7 @@ def display_results(original, masked, mask, result, save_path=None):
     axes[1].set_title('Masked', fontsize=14)
     axes[1].axis('off')
     
-    axes[2].imshow(mask_display, cmap='gray')
+    axes[2].imshow(mask_display, cmap='gray', interpolation='nearest')
     axes[2].set_title('Mask', fontsize=14)
     axes[2].axis('off')
     
