@@ -1,17 +1,17 @@
 """
 Google Colab Training Script
 ============================
-Simple script to train the face-swapping model after cloning the repo.
+Simple script to train the general image inpainting model after cloning the repo.
 
 This will:
-- Download the face-swap dataset from Kaggle
-- Train the diffusion model
+- Download the CIFAR-10 dataset
+- Train the diffusion inpainting model
 - Save the trained model to checkpoints/
 """
 
 import os
 import torch
-from main.train import train
+from main.train_inpainting import train_inpainting
 
 
 def main():
@@ -19,22 +19,25 @@ def main():
     os.makedirs('checkpoints', exist_ok=True)
     
     # Training configuration
-    checkpoint_path = 'checkpoints/ddpm_faceswap_checkpoint'
+    checkpoint_path = 'checkpoints/inpainting_checkpoint'
     
     print("=" * 60)
-    print("🚀 Starting Face-Swap Model Training")
+    print("🚀 Starting General Image Inpainting Model Training")
     print("=" * 60)
+    print("   - Dataset: CIFAR-10 (diverse images)")
+    print("   - Task: Fill holes/masks in any image")
+    print("   - Output: General-purpose inpainting model")
     
     # Training parameters - adjust based on your needs
     config = {
         'checkpoint_path': checkpoint_path,
-        'batch_size': 8,              # Reduce if you get OOM errors
-        'num_epochs': 2500,            # Number of training epochs
+        'batch_size': 32,              # Increase since CIFAR-10 images are smaller
+        'num_epochs': 100,             # Fewer epochs needed for CIFAR-10
         'lr': 1e-4,                   # Learning rate
-        'num_time_steps': 1000,       # Diffusion timesteps (MUST match model architecture)
-        'max_dataset_size': 400,     # Set to a number (e.g., 1000) to limit dataset size for testing
-        'save_every_n_epochs': 3000,    # Save checkpoint every N epochs
-        'push_to_github': False        # Push checkpoints to GitHub (requires git configured)
+        'num_time_steps': 1000,       # Diffusion timesteps
+        'max_dataset_size': 500,     # Use full CIFAR-10 dataset
+        'save_every_n_epochs': 10,    # Save checkpoint every 10 epochs
+        'image_size': 128             # Training image size
     }
     
     print("\n📋 Training Configuration:")
@@ -43,11 +46,11 @@ def main():
     
     print("\n🎓 Starting training process...")
     print("   This may take several hours depending on your hardware.")
-    print("\n💡 Checkpoints will be saved every 10 epochs and pushed to GitHub")
+    print("\n💡 Checkpoints will be saved every 100 epochs and pushed to GitHub")
     print("   This protects your progress if Colab disconnects!")
     
     # Start training
-    train(**config)
+    train_inpainting(**config)
     
     print("\n" + "=" * 60)
     print("Training Complete!")
