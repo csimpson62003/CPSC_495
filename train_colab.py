@@ -32,7 +32,7 @@ def main():
     config = {
         'checkpoint_path': checkpoint_path,
         'batch_size': 32,              # Increase since CIFAR-10 images are smaller
-        'num_epochs': 100,             # Fewer epochs needed for CIFAR-10
+        'num_epochs': 200,             # Fewer epochs needed for CIFAR-10
         'lr': 1e-4,                   # Learning rate
         'num_time_steps': 1000,       # Diffusion timesteps
         'max_dataset_size': 500,     # Use full CIFAR-10 dataset
