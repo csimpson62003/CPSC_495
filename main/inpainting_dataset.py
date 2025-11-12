@@ -139,27 +139,4 @@ class InpaintingDataset(Dataset):
             'path': img_path
         }
 
-
-class CelebAInpaintingDataset(InpaintingDataset):
-    """CelebA-specific dataset loader."""
-    
-    def _find_images(self, dataset_path):
-        """CelebA has specific structure."""
-        possible_paths = [
-            os.path.join(dataset_path, 'img_align_celeba', '*.jpg'),
-            os.path.join(dataset_path, 'img_align_celeba', '*.png'),
-            os.path.join(dataset_path, '*.jpg'),
-        ]
-        
-        images = []
-        for pattern in possible_paths:
-            found = glob.glob(pattern)
-            if found:
-                images.extend(found)
-                break
-        
-        if self.max_images is not None:
-            images = images[:self.max_images]
-        
-        print(f"Found {len(images)} CelebA images")
-        return images
+# Note: CelebAInpaintingDataset removed - now using CIFAR-10 for general-purpose inpainting

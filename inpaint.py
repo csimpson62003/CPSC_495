@@ -71,7 +71,7 @@ def main():
         return
     
     # Your image paths
-    image_path = "my_images/image.jpg"
+    image_path = "my_images/image.png"
     mask_path = "my_images/mask.png"
     output_file = "inpainted_result.png"
     

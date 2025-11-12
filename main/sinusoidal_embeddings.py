@@ -4,8 +4,8 @@ TIME EMBEDDING MODULE FOR DIFFUSION PROCESS
 Generates sinusoidal positional embeddings to encode the current timestep in the diffusion process.
 This allows the model to understand how much noise has been added at each step.
 
-For face-swapping: This component will help the model understand the denoising progression,
-crucial for generating high-quality facial features at the right denoising stage.
+For general image inpainting: This component helps the model understand the denoising progression,
+crucial for generating high-quality content that matches the surrounding context when filling holes.
 """
 
 import torch

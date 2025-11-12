@@ -10,13 +10,75 @@ import torch.optim as optim
 import os
 import random
 from torch.utils.data import DataLoader
+from torchvision import transforms, datasets
 from tqdm import tqdm
 from timm.utils import ModelEmaV3
 
-from .inpainting_dataset import CelebAInpaintingDataset
 from .inpainting_unet import InpaintingUNET
 from .ddpm_scheduler import DDPM_Scheduler
 from .utils import set_seed, setup_cuda_device
+
+
+class GeneralInpaintingDataset(torch.utils.data.Dataset):
+    """
+    General-purpose inpainting dataset that wraps any image dataset
+    and creates random masks for training.
+    """
+    
+    def __init__(self, base_dataset, max_images=None):
+        self.base_dataset = base_dataset
+        self.max_images = max_images or len(base_dataset)
+        self.length = min(self.max_images, len(base_dataset))
+    
+    def __len__(self):
+        return self.length
+    
+    def __getitem__(self, idx):
+        # Get image from base dataset
+        if isinstance(self.base_dataset[idx], tuple):
+            image, _ = self.base_dataset[idx]  # Ignore label for CIFAR-10
+        else:
+            image = self.base_dataset[idx]
+        
+        # Create random mask
+        mask = self._create_random_mask(image.shape[-2:])  # H, W
+        
+        # Apply mask to image
+        masked_image = image * mask
+        
+        return {
+            'image': image,           # Original clean image  
+            'masked_image': masked_image,  # Image with holes
+            'mask': mask             # Binary mask (1=keep, 0=inpaint)
+        }
+    
+    def _create_random_mask(self, image_size):
+        """Create random mask with holes to fill."""
+        h, w = image_size
+        mask = torch.ones((1, h, w))
+        
+        # Create random rectangular holes
+        num_holes = random.randint(1, 4)
+        for _ in range(num_holes):
+            hole_h = random.randint(h//8, h//3)
+            hole_w = random.randint(w//8, w//3)
+            y = random.randint(0, h - hole_h)
+            x = random.randint(0, w - hole_w)
+            mask[:, y:y+hole_h, x:x+hole_w] = 0
+        
+        # Sometimes add circular holes
+        if random.random() < 0.3:
+            center_y = random.randint(h//4, 3*h//4)
+            center_x = random.randint(w//4, 3*w//4)
+            radius = random.randint(min(h,w)//10, min(h,w)//4)
+            
+            y_coords, x_coords = torch.meshgrid(
+                torch.arange(h), torch.arange(w), indexing='ij'
+            )
+            distances = torch.sqrt((y_coords - center_y)**2 + (x_coords - center_x)**2)
+            mask[0, distances < radius] = 0
+        
+        return mask
 
 
 def train_inpainting(
@@ -42,17 +104,27 @@ def train_inpainting(
     # Set seed
     set_seed(random.randint(0, 2**32-1)) if seed == -1 else set_seed(seed)
 
-    # Download CelebA dataset
-    print("📥 Downloading CelebA dataset...")
-    import kagglehub
-    dataset_path = kagglehub.dataset_download("jessicali9530/celeba-dataset")
-    print(f"Dataset downloaded to: {dataset_path}")
+    # Use CIFAR-10 dataset for general-purpose inpainting (more diverse than faces)
+    print("📥 Loading CIFAR-10 dataset for general image inpainting...")
     
-    # Create dataset
-    print("📂 Loading images and creating masks...")
-    train_dataset = CelebAInpaintingDataset(
-        dataset_path=os.path.join(dataset_path, "img_align_celeba"),
-        image_size=image_size,
+    # CIFAR-10 has diverse images: animals, vehicles, objects, etc.
+    cifar_transform = transforms.Compose([
+        transforms.Resize((image_size, image_size), interpolation=transforms.InterpolationMode.LANCZOS),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    ])
+    
+    cifar_dataset = datasets.CIFAR10(
+        root='./data', 
+        train=True, 
+        download=True, 
+        transform=cifar_transform
+    )
+    
+    # Create inpainting dataset wrapper
+    print("📂 Creating masks for inpainting training...")
+    train_dataset = GeneralInpaintingDataset(
+        base_dataset=cifar_dataset,
         max_images=max_dataset_size
     )
     

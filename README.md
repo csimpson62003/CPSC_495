@@ -1,6 +1,6 @@
-# Image Inpainting with Diffusion Models
+# Image Inpainting with Diffusion Models 🖌️
 
-A PyTorch implementation of an image inpainting model using denoising diffusion probabilistic models (DDPM). The model learns to fill in missing or masked regions of images by training on the CelebA face dataset.
+A PyTorch implementation of a general-purpose image inpainting model using denoising diffusion probabilistic models (DDPM). The model learns to fill in missing or masked regions of any type of image by training on the diverse CIFAR-10 dataset.
 
 ## Quick Start for Google Colab
 

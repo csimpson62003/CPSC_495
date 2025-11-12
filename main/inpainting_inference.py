@@ -112,8 +112,8 @@ def inpaint_image(image_path: str,
         # Mix: keep known regions, random noise in masked regions
         x = image * mask + noise * (1 - mask)
         
-        # Add some noise to known regions too for blending
-        t_start = 500
+        # Add minimal noise to known regions for blending (reduced for geometric patterns)
+        t_start = 200  # Reduced from 500 for less noise
         alpha_start = scheduler.alpha[torch.tensor([t_start], device=device)].view(1, 1, 1, 1)
         x = torch.sqrt(alpha_start) * x + torch.sqrt(1 - alpha_start) * torch.randn_like(x)
         
@@ -138,38 +138,25 @@ def inpaint_image(image_path: str,
             pred_x0 = (x - torch.sqrt(1 - alpha_t) * predicted_noise) / torch.sqrt(alpha_t)
             pred_x0 = torch.clamp(pred_x0, -1, 1)
             
-            # Keep known regions, update masked regions
+            # Keep known regions, update masked regions (stronger preservation)
             pred_x0 = image * mask + pred_x0 * (1 - mask)
             
-            # DDIM step
+            # DDIM step with stronger known region preservation
             if i < len(timesteps) - 1:
                 t_next = torch.tensor([timesteps[i + 1]], device=device)
                 alpha_t_next = scheduler.alpha[t_next].view(1, 1, 1, 1)
                 
                 x = torch.sqrt(alpha_t_next) * pred_x0 + torch.sqrt(1 - alpha_t_next) * predicted_noise
+                # Ensure known regions stay consistent
+                x = image * mask + x * (1 - mask)
             else:
                 x = pred_x0
         
         result = x
     
-    # Upscale to 512x512
-    print("⬆️ Upscaling to 512x512...")
-    result = torch.nn.functional.interpolate(
-        result,
-        size=(512, 512),
-        mode='bicubic',
-        align_corners=False,
-        antialias=True
-    )
-    
-    # Load high-res for display
-    image_hr = load_and_preprocess_image(image_path, size=512).to(device)
-    mask_hr = torch.nn.functional.interpolate(mask, size=(512, 512), mode='nearest')
-    masked_image_hr = image_hr * mask_hr
-    
-    # Display results
+    # Display results at original size
     print("✅ Inpainting complete!")
-    display_results(image_hr, masked_image_hr, mask_hr, result, save_result)
+    display_results(image, masked_image, mask, result, save_result)
     
     return result
 

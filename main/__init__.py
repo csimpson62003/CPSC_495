@@ -19,7 +19,6 @@ Training & Inference:
 - utils: Helper functions for setup and visualization
 """
 
-from .inpainting_dataset import CelebAInpaintingDataset
 from .inpainting_unet import InpaintingUNET
 from .unet import UNET
 from .ddpm_scheduler import DDPM_Scheduler
@@ -32,7 +31,6 @@ from .inpainting_inference import inpaint_image
 from .utils import set_seed, setup_cuda_device, display_reverse
 
 __all__ = [
-    'CelebAInpaintingDataset',
     'InpaintingUNET',
     'UNET', 
     'DDPM_Scheduler',
