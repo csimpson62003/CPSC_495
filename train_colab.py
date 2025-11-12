@@ -31,13 +31,13 @@ def main():
     # Training parameters - adjust based on your needs
     config = {
         'checkpoint_path': checkpoint_path,
-        'batch_size': 32,              # Increase since CIFAR-10 images are smaller
+        'batch_size': 8,              # Reduced from 32 to fit GPU memory
         'num_epochs': 200,             # Fewer epochs needed for CIFAR-10
         'lr': 1e-4,                   # Learning rate
         'num_time_steps': 1000,       # Diffusion timesteps
         'max_dataset_size': 500,     # Use full CIFAR-10 dataset
         'save_every_n_epochs': 10,    # Save checkpoint every 10 epochs
-        'image_size': 128             # Training image size
+        'image_size': 32               # Reduced from 128 to 32 to save GPU memory
     }
     
     print("\n📋 Training Configuration:")
