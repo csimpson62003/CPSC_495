@@ -1,11 +1,6 @@
 """
-TIME EMBEDDING MODULE FOR DIFFUSION PROCESS
-==========================================
-Generates sinusoidal positional embeddings to encode the current timestep in the diffusion process.
-This allows the model to understand how much noise has been added at each step.
-
-For general image inpainting: This component helps the model understand the denoising progression,
-crucial for generating high-quality content that matches the surrounding context when filling holes.
+Sinusoidal position embeddings for encoding timestep information in the diffusion process.
+Converts scalar timesteps into high-dimensional vectors that the model can process.
 """
 
 import torch
@@ -14,36 +9,14 @@ import math
 
 
 class SinusoidalEmbeddings(nn.Module):
-    def __init__(self, time_steps: int, embed_dim: int):
+    def __init__(self, embed_dim: int, max_T: int = 1000):
         super().__init__()
-        # Create positional encodings for each timestep (0 to time_steps-1)
-        position = torch.arange(time_steps).unsqueeze(1).float()
-        
-        # Calculate the divisor for the sinusoidal functions
-        # This creates different frequencies for different embedding dimensions
-        div = torch.exp(torch.arange(0, embed_dim, 2).float() * -(math.log(10000.0) / embed_dim))
-        
-        # Initialize the embedding matrix
-        embeddings = torch.zeros(time_steps, embed_dim, requires_grad=False)
-        
-        # Apply sine to even indices (0, 2, 4, ...)
-        embeddings[:, 0::2] = torch.sin(position * div)
-        # Apply cosine to odd indices (1, 3, 5, ...)
-        embeddings[:, 1::2] = torch.cos(position * div)
-        
-        self.embeddings = embeddings
+        position = torch.arange(max_T).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, embed_dim, 2) * (-math.log(10000.0) / embed_dim))
+        embeddings = torch.zeros(max_T, embed_dim)
+        embeddings[:, 0::2] = torch.sin(position * div_term)
+        embeddings[:, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('embeddings', embeddings)
 
-    def forward(self, x, t):
-        """
-        Returns time embeddings for the given timesteps, reshaped for broadcasting with image tensors.
-        
-        Args:
-            x: Input tensor (used for device placement)
-            t: Timestep tensor
-        Returns:
-            Time embeddings shaped for broadcasting [batch, embed_dim, 1, 1]
-        """
-        # Get embeddings for the specified timesteps and ensure they're on the correct device
-        embeds = self.embeddings.to(x.device)[t]
-        # Reshape for broadcasting across spatial dimensions (height, width)
-        return embeds[:, :, None, None]
+    def forward(self, t):
+        return self.embeddings[t][:, :, None, None]

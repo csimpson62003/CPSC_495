@@ -1,23 +1,17 @@
 # Image Inpainting with Diffusion Models 🖌️
 
-A PyTorch implementation of a general-purpose image inpainting model using denoising diffusion probabilistic models (DDPM). The model learns to fill in missing or masked regions of any type of image by training on the diverse CIFAR-10 dataset.
+A PyTorch implementation of an image inpainting model using denoising diffusion probabilistic models (DDPM). The model fills in masked regions of images by learning from diverse training data.
 
-## Quick Start for Google Colab
+## Quick Start
 
-### 1. Clone the Repository
+### 1. Install Dependencies
 ```bash
-!git clone https://github.com/csimpson62003/CPSC_495.git
-%cd CPSC_495
+pip install -r requirements.txt
 ```
 
-### 2. Install Dependencies
+### 2. Train the Model
 ```bash
-!pip install -r requirements.txt
-```
-
-### 3. Train the Model
-```bash
-!python train_inpainting_colab.py
+python train_colab.py
 ```
 
 This will:
@@ -26,96 +20,65 @@ This will:
 - Save checkpoints to `checkpoints/` every 100 epochs
 - Train at 128x128 resolution (upscaled to 512x512 during inference)
 
-Training typically takes several hours depending on your hardware.
+Training typically takes several hours on GPU.
 
-### 4. Use the Trained Model
+### 3. Run Inpainting
 ```bash
-!python inpaint.py
+python inpaint.py
 ```
 
-This demo script will:
-- Load an image from `my_photos/`
-- Create a random mask (or use a provided mask)
-- Fill in the masked region using the trained model
-- Display before/after comparison
-- Upscale result to 512x512
+Provide your own image and mask (white = keep, black = fill in) to inpaint missing regions.
 
 ## How It Works
 
 The model uses a **mask-conditioned U-Net** that takes:
-- **Masked Image**: Original image with missing regions (black pixels)
-- **Binary Mask**: White = keep original, Black = fill in
+- **Image**: Your input image
+- **Mask**: Binary mask (white = keep, black = fill in)
 - **Timestep**: Current diffusion timestep
 
-During training:
-- Random masks are generated (rectangles, circles, brush strokes)
-- The model learns to denoise only the masked regions
-- Loss is computed only on masked pixels
-- EMA (Exponential Moving Average) weights for stability
+The model iteratively denoises the masked region while preserving the known pixels. Results are upscaled from 128x128 to 512x512 for high-quality output.
 
-During inference:
-- The model iteratively denoises the masked region
-- Known pixels are preserved at each step
-- Result is upscaled from 128x128 to 512x512
-
-## Training Configuration
-
-Adjust parameters in `train_inpainting_colab.py`:
-- `batch_size`: Default 32 (reduce if out-of-memory)
-- `num_epochs`: Default 2000
-- `lr`: Learning rate (default: 1e-4)
-- `image_size`: Training resolution (default: 128)
-- `save_every_n_epochs`: Save checkpoint interval (default: 100)
-
-## Usage Examples
+## Usage
 
 ### Basic Inpainting
 ```python
 from main.inpainting_inference import inpaint_image
 
-# Load image and mask
-image_path = "my_photos/face.jpg"
-mask_path = "my_photos/mask.png"  # White=keep, Black=fill
-
-# Inpaint
+# Provide image and mask paths
 result = inpaint_image(
-    image_path=image_path,
-    mask_path=mask_path,
-    checkpoint_path="checkpoints/inpainting_epoch_2000.pth",
+    image_path="your_image.jpg",
+    mask_path="your_mask.png",  # White=keep, Black=fill
+    checkpoint_path="checkpoints/inpainting_checkpoint",
     output_size=512
 )
 ```
 
-### Auto-Generate Mask
-```python
-# The demo script can auto-create masks:
-!python inpaint.py  # Creates random mask automatically
-```
-
-Mask types:
-- `center`: Rectangle in center
-- `random`: Random rectangles
-- `strokes`: Random brush strokes
+The mask should be a binary image where:
+- **White (255)** = preserve original pixels
+- **Black (0)** = inpaint this region
 
 ## Project Structure
 
 ```
 CPSC_495/
-├── train_inpainting_colab.py  # Training script for Colab
-├── inpaint.py                  # Demo inference script
-├── requirements.txt            # Python dependencies
-├── my_photos/                  # Put your test images here
-├── checkpoints/                # Trained models saved here
-└── main/                       # Core model components
+├── train_colab.py              # Training script
+├── inpaint.py                  # Inference script
+├── requirements.txt            # Dependencies
+├── checkpoints/                # Saved models
+│   └── inpainting_checkpoint
+├── data/                       # Training data directory
+└── main/                       # Core components
     ├── inpainting_dataset.py   # Dataset with mask generation
     ├── inpainting_unet.py      # Mask-conditioned U-Net
     ├── train_inpainting.py     # Training logic
     ├── inpainting_inference.py # Inference logic
     ├── unet.py                 # Base U-Net architecture
-    ├── ddpm_scheduler.py       # DDPM noise scheduler
+    ├── ddpm_scheduler.py       # Diffusion scheduler
     ├── attention.py            # Attention mechanisms
     ├── res_block.py            # Residual blocks
-    └── ...                     # Other components
+    ├── unet_layer.py           # U-Net layers
+    ├── sinusoidal_embeddings.py# Time embeddings
+    └── utils.py                # Utilities
 ```
 
 ## Requirements
@@ -129,30 +92,12 @@ CPSC_495/
 - matplotlib
 - numpy
 - kagglehub
+- pillow
 
 ## Technical Details
 
-### Architecture
-- **Base**: U-Net with attention mechanisms and residual blocks
-- **Conditioning**: Concatenates masked image + binary mask in parallel branches
-- **Resolution**: Trains at 128x128, upscales to 512x512 with bicubic interpolation
-- **Timesteps**: 1000 diffusion steps
+**Architecture**: U-Net with attention mechanisms and residual blocks, conditioned on masked image and binary mask.
 
-### Training
-- **Dataset**: CelebA (~200k face images)
-- **Optimizer**: Adam with learning rate 1e-4
-- **Loss**: MSE computed only on masked regions
-- **Stability**: EMA weights with decay 0.995
+**Training**: Adam optimizer with 1e-4 learning rate, MSE loss computed only on masked regions, EMA weights for stability.
 
-### Mask Generation
-The dataset automatically creates diverse masks:
-- **Rectangles**: Random position and size (20-80% of image)
-- **Circles**: Random center and radius
-- **Brush Strokes**: Multiple curved strokes with random width
-
-## Notes
-
-- GPU strongly recommended (CPU training will be extremely slow)
-- The model preserves known pixel values during inference
-- Larger masks are more challenging to fill convincingly
-- Training for 2000+ epochs recommended for best quality
+**Inference**: 1000-step diffusion process that iteratively denoises masked regions while preserving known pixels.

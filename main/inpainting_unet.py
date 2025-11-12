@@ -1,8 +1,6 @@
 """
-Inpainting-Conditioned U-NET
-==============================
-Modified U-Net for image inpainting using diffusion.
-Takes masked image + mask as input, fills in missing regions.
+Mask-conditioned U-Net for image inpainting using diffusion models.
+Processes both the masked image and mask to predict and fill missing regions.
 """
 
 import torch
@@ -13,12 +11,6 @@ from .unet_layer import UnetLayer
 
 
 class InpaintingUNET(nn.Module):
-    """
-    U-Net for image inpainting with diffusion.
-    Input: Noisy masked image + binary mask
-    Output: Predicted noise to remove
-    """
-    
     def __init__(self,
             Channels: List = [64, 128, 256, 512, 512, 384],
             Attentions: List = [False, True, False, False, False, True],
@@ -34,26 +26,18 @@ class InpaintingUNET(nn.Module):
         
         self.num_layers = len(Channels)
         
-        # Process masked image
         self.image_conv = nn.Conv2d(input_channels, Channels[0]//2, kernel_size=3, padding=1)
-        
-        # Process mask (tells model which regions to fill)
         self.mask_conv = nn.Conv2d(mask_channels, Channels[0]//2, kernel_size=3, padding=1)
-        
-        # Combine image and mask info
         self.combine_conv = nn.Conv2d(Channels[0], Channels[0], kernel_size=3, padding=1)
         
-        # Output layers
         out_channels = (Channels[-1]//2) + Channels[0]
         self.late_conv = nn.Conv2d(out_channels, out_channels//2, kernel_size=3, padding=1)
         self.output_conv = nn.Conv2d(out_channels//2, output_channels, kernel_size=1)
         
         self.relu = nn.ReLU(inplace=True)
         
-        # Time embeddings
         self.embeddings = SinusoidalEmbeddings(time_steps=time_steps, embed_dim=max(Channels))
         
-        # Create U-Net layers
         for i in range(self.num_layers):
             layer = UnetLayer(
                 upscale=Upscales[i],
@@ -66,38 +50,22 @@ class InpaintingUNET(nn.Module):
             setattr(self, f'Layer{i+1}', layer)
 
     def forward(self, x, t, mask):
-        """
-        Forward pass with mask conditioning.
-        
-        Args:
-            x: Noisy masked image [batch, 3, H, W]
-            t: Timestep [batch]
-            mask: Binary mask [batch, 1, H, W] (1 = keep, 0 = inpaint)
-        Returns:
-            Predicted noise
-        """
-        # Process image and mask
         image_features = self.image_conv(x)
         mask_features = self.mask_conv(mask)
         
-        # Combine
         combined = torch.cat([image_features, mask_features], dim=1)
         x = self.relu(self.combine_conv(combined))
         
-        # Skip connections
         residuals = []
         
-        # ENCODER
         for i in range(self.num_layers//2):
             layer = getattr(self, f'Layer{i+1}')
             embeddings = self.embeddings(x, t)
             x, r = layer(x, embeddings)
             residuals.append(r)
         
-        # DECODER
         for i in range(self.num_layers//2, self.num_layers):
             layer = getattr(self, f'Layer{i+1}')
             x = torch.concat((layer(x, embeddings)[0], residuals[self.num_layers-i-1]), dim=1)
         
-        # Output
         return self.output_conv(self.relu(self.late_conv(x)))

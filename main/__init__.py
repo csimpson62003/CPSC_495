@@ -1,22 +1,6 @@
 """
-IMAGE INPAINTING DIFFUSION MODEL PACKAGE
-========================================
-This package contains all the components for an image inpainting diffusion model.
-
-Core Components:
-- InpaintingDataset: Loads images and generates random masks
-- InpaintingUNET: Mask-conditioned U-Net for inpainting
-- UNET: Base U-Net architecture
-- DDPM_Scheduler: Manages the noise schedule for training and generation
-- SinusoidalEmbeddings: Time encoding for the diffusion process
-- ResBlock: Residual blocks for the U-Net architecture
-- Attention: Self-attention mechanism for long-range dependencies
-- UnetLayer: Individual layers of the U-Net
-
-Training & Inference:
-- train_inpainting: Main training function for inpainting
-- inpaint_image: Image inpainting function
-- utils: Helper functions for setup and visualization
+Image inpainting diffusion model package.
+Provides components for training and inference of mask-conditioned image inpainting using DDPM.
 """
 
 from .inpainting_unet import InpaintingUNET

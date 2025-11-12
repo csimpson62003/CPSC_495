@@ -1,12 +1,13 @@
 """
-Google Colab Training Script for Pixel Patterns
-===============================================
-Simple script to train the pixel pattern inpainting model.
+Training Script for Image Inpainting
+=====================================
+Train the inpainting model on your dataset.
 
 This will:
-- Generate synthetic pixel patterns (squares, rainbows, checkers, etc.)
-- Train the diffusion inpainting model to complete missing parts
-- Save the trained model to checkpoints/
+- Load images from the data/ directory
+- Generate random masks for training
+- Train the diffusion inpainting model
+- Save checkpoints to checkpoints/
 """
 
 import os
@@ -15,48 +16,57 @@ from main.train_inpainting import train_inpainting
 
 
 def main():
-    # Create checkpoints directory
+    # Create directories
     os.makedirs('checkpoints', exist_ok=True)
+    os.makedirs('data', exist_ok=True)
     
     # Training configuration
     checkpoint_path = 'checkpoints/inpainting_checkpoint'
+    dataset_path = 'data/'  # Put your training images here
     
     print("=" * 60)
-    print("🎨 Starting Pixel Pattern Inpainting Model Training")
+    print("🎨 Starting Image Inpainting Model Training")
     print("=" * 60)
-    print("   - Dataset: Synthetic Pixel Patterns")
-    print("   - Patterns: Purple squares, rainbows, checkers, stripes, etc.")
-    print("   - Task: Fill holes/masks in geometric patterns")
-    print("   - Output: Pattern-specialized inpainting model")
+    print(f"   - Dataset: {dataset_path}")
+    print("   - Task: Fill in masked regions of images")
+    print("   - Output: Inpainting model")
     
-    # Training parameters - optimized for pixel patterns
+    # Check if dataset exists
+    if not os.path.exists(dataset_path) or len(os.listdir(dataset_path)) == 0:
+        print("\n⚠️  WARNING: No training data found!")
+        print(f"   Please add images to: {dataset_path}")
+        print("   Or download a dataset (e.g., CelebA, ImageNet, etc.)")
+        return
+    
+    # Training parameters
     config = {
         'checkpoint_path': checkpoint_path,
-        'batch_size': 16,             # Good batch size for patterns
-        'num_epochs': 100,            # Patterns are simpler, need fewer epochs
-        'lr': 2e-4,                   # Slightly higher learning rate for patterns
-        'num_time_steps': 1000,       # Standard diffusion timesteps
-        'max_dataset_size': 1000,     # 5k patterns per epoch
-        'save_every_n_epochs': 20,    # Save checkpoint every 20 epochs
-        'image_size': 32             # 32x32 for good pattern resolution
+        'dataset_path': dataset_path,
+        'batch_size': 32,
+        'num_epochs': 2000,
+        'lr': 1e-4,
+        'num_time_steps': 1000,
+        'max_dataset_size': None,  # Use all images
+        'save_every_n_epochs': 100,
+        'image_size': 128
     }
     
     print("\n📋 Training Configuration:")
     for key, value in config.items():
         print(f"   {key}: {value}")
     
-    print("\n🎓 Starting pattern training process...")
-    print("   This should take 30-60 minutes depending on your hardware.")
-    print("\n💡 Checkpoints will be saved every 20 epochs")
-    print("   Monitor the loss - it should decrease steadily for patterns!")
+    print("\n🎓 Starting training process...")
+    print("   This may take several hours depending on your hardware.")
+    print("\n💡 Checkpoints will be saved every 100 epochs")
+    print("   Monitor the loss - it should decrease steadily!")
     
     # Start training
     train_inpainting(**config)
     
     print("\n" + "=" * 60)
-    print("🎉 Pixel Pattern Training Complete!")
+    print("🎉 Training Complete!")
     print("💾 Model saved to: checkpoints/inpainting_checkpoint")
-    print("🧪 Test it with: python3 test_pattern_inpainting.py")
+    print("🧪 Test it with: python inpaint.py")
 
 
 
