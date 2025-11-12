@@ -36,7 +36,7 @@ class InpaintingUNET(nn.Module):
         
         self.relu = nn.ReLU(inplace=True)
         
-        self.embeddings = SinusoidalEmbeddings(time_steps=time_steps, embed_dim=max(Channels))
+        self.embeddings = SinusoidalEmbeddings(embed_dim=max(Channels), max_T=time_steps)
         
         for i in range(self.num_layers):
             layer = UnetLayer(
@@ -60,7 +60,7 @@ class InpaintingUNET(nn.Module):
         
         for i in range(self.num_layers//2):
             layer = getattr(self, f'Layer{i+1}')
-            embeddings = self.embeddings(x, t)
+            embeddings = self.embeddings(t)
             x, r = layer(x, embeddings)
             residuals.append(r)
         

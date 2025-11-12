@@ -58,8 +58,12 @@ def inpaint_image(image_path: str,
     
     if 'ema' in checkpoint:
         ema = ModelEmaV3(model, decay=0.9999)
-        ema.load_state_dict(checkpoint['ema'])
-        model = ema.module.eval()
+        try:
+            ema.load_state_dict(checkpoint['ema'])
+            model = ema.module.eval()
+        except RuntimeError as e:
+            ema.load_state_dict(checkpoint['ema'], strict=False)
+            model = ema.module.eval()
     else:
         model = model.eval()
     
