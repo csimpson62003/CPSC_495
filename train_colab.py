@@ -1,11 +1,11 @@
 """
-Google Colab Training Script
-============================
-Simple script to train the general image inpainting model after cloning the repo.
+Google Colab Training Script for Pixel Patterns
+===============================================
+Simple script to train the pixel pattern inpainting model.
 
 This will:
-- Download the CIFAR-10 dataset
-- Train the diffusion inpainting model
+- Generate synthetic pixel patterns (squares, rainbows, checkers, etc.)
+- Train the diffusion inpainting model to complete missing parts
 - Save the trained model to checkpoints/
 """
 
@@ -22,38 +22,41 @@ def main():
     checkpoint_path = 'checkpoints/inpainting_checkpoint'
     
     print("=" * 60)
-    print("🚀 Starting General Image Inpainting Model Training")
+    print("🎨 Starting Pixel Pattern Inpainting Model Training")
     print("=" * 60)
-    print("   - Dataset: CIFAR-10 (diverse images)")
-    print("   - Task: Fill holes/masks in any image")
-    print("   - Output: General-purpose inpainting model")
+    print("   - Dataset: Synthetic Pixel Patterns")
+    print("   - Patterns: Purple squares, rainbows, checkers, stripes, etc.")
+    print("   - Task: Fill holes/masks in geometric patterns")
+    print("   - Output: Pattern-specialized inpainting model")
     
-    # Training parameters - adjust based on your needs
+    # Training parameters - optimized for pixel patterns
     config = {
         'checkpoint_path': checkpoint_path,
-        'batch_size': 8,              # Reduced from 32 to fit GPU memory
-        'num_epochs': 200,             # Fewer epochs needed for CIFAR-10
-        'lr': 1e-4,                   # Learning rate
-        'num_time_steps': 1000,       # Diffusion timesteps
-        'max_dataset_size': 500,     # Use full CIFAR-10 dataset
-        'save_every_n_epochs': 10,    # Save checkpoint every 10 epochs
-        'image_size': 32               # Reduced from 128 to 32 to save GPU memory
+        'batch_size': 16,             # Good batch size for patterns
+        'num_epochs': 100,            # Patterns are simpler, need fewer epochs
+        'lr': 2e-4,                   # Slightly higher learning rate for patterns
+        'num_time_steps': 1000,       # Standard diffusion timesteps
+        'max_dataset_size': 1000,     # 5k patterns per epoch
+        'save_every_n_epochs': 20,    # Save checkpoint every 20 epochs
+        'image_size': 32             # 32x32 for good pattern resolution
     }
     
     print("\n📋 Training Configuration:")
     for key, value in config.items():
         print(f"   {key}: {value}")
     
-    print("\n🎓 Starting training process...")
-    print("   This may take several hours depending on your hardware.")
-    print("\n💡 Checkpoints will be saved every 100 epochs and pushed to GitHub")
-    print("   This protects your progress if Colab disconnects!")
+    print("\n🎓 Starting pattern training process...")
+    print("   This should take 30-60 minutes depending on your hardware.")
+    print("\n💡 Checkpoints will be saved every 20 epochs")
+    print("   Monitor the loss - it should decrease steadily for patterns!")
     
     # Start training
     train_inpainting(**config)
     
     print("\n" + "=" * 60)
-    print("Training Complete!")
+    print("🎉 Pixel Pattern Training Complete!")
+    print("💾 Model saved to: checkpoints/inpainting_checkpoint")
+    print("🧪 Test it with: python3 test_pattern_inpainting.py")
 
 
 
