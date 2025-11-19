@@ -32,8 +32,8 @@ def auto_download_dataset():
         print("🎨 Generating patterns... (this will take 1-2 minutes)")
         generate_pattern_dataset(
             output_dir='data',
-            num_images=5000,
-            size=128
+            num_images=3000,
+            size=32
         )
         print("\n✅ Pattern generation complete!")
         return True
@@ -92,8 +92,8 @@ def main():
         'lr': 1e-4,
         'num_time_steps': 1000,
         'max_dataset_size': None,  # Use all images
-        'save_every_n_epochs': 10,
-        'image_size': 128
+        'save_every_n_epochs': 20,
+        'image_size': 32
     }
     
     print("\n📋 Training Configuration:")
