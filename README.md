@@ -1,6 +1,6 @@
 # Image Inpainting with Diffusion Models 🖌️
 
-A PyTorch implementation of an image inpainting model using denoising diffusion probabilistic models (DDPM). The model fills in masked regions of images by learning from diverse training data.
+A PyTorch implementation of a **pattern inpainting model** using denoising diffusion probabilistic models (DDPM). The model fills in masked regions of **grayscale geometric patterns** by learning structural rules.
 
 ## Quick Start
 
@@ -9,34 +9,72 @@ A PyTorch implementation of an image inpainting model using denoising diffusion 
 pip install -r requirements.txt
 ```
 
-### 2. Train the Model
+### 2. Generate Pattern Dataset
+```bash
+python generate_patterns.py
+```
+
+This creates 5000 synthetic geometric patterns including:
+- Checkerboards (various sizes)
+- Stripes (horizontal, vertical, diagonal)
+- Dots and grids
+- Waves and zigzags
+- Concentric shapes
+- Random geometric shapes
+- Mixed patterns
+
+### 3. Train the Model
 ```bash
 python train_colab.py
 ```
 
 This will:
-- Download the CelebA dataset from Kaggle (~200k face images)
-- Train the mask-conditioned diffusion model
+- Auto-generate patterns if none exist
+- Train the mask-conditioned diffusion model on grayscale patterns
 - Save checkpoints to `checkpoints/` every 100 epochs
-- Train at 128x128 resolution (upscaled to 512x512 during inference)
+- Train at 128x128 resolution
 
 Training typically takes several hours on GPU.
 
-### 3. Run Inpainting
+### 4. Run Inpainting
 ```bash
 python inpaint.py
 ```
 
-Provide your own image and mask (white = keep, black = fill in) to inpaint missing regions.
+Provide your own pattern image and mask (white = keep, black = fill in) to inpaint missing regions.
 
 ## How It Works
 
-The model uses a **mask-conditioned U-Net** that takes:
-- **Image**: Your input image
+The model uses a **mask-conditioned U-Net** optimized for grayscale pattern inpainting:
+- **Input channels**: 1 (grayscale)
+- **Output channels**: 1 (grayscale)
+- **Image**: Your grayscale pattern image
 - **Mask**: Binary mask (white = keep, black = fill in)
 - **Timestep**: Current diffusion timestep
 
-The model iteratively denoises the masked region while preserving the known pixels. Results are upscaled from 128x128 to 512x512 for high-quality output.
+The model learns geometric and structural patterns, enabling it to intelligently complete missing regions with contextually appropriate patterns. By using grayscale, the model focuses purely on pattern structure without color complexity.
+
+## Pattern Dataset
+
+The model trains on synthetically generated geometric patterns:
+
+**Pattern Types:**
+- Checkerboards (4x4 to 32x32)
+- Stripes (horizontal, vertical, diagonal, varying widths)
+- Dots/Polka dots (various sizes and spacing)
+- Grids and lattices
+- Sine waves (horizontal, vertical)
+- Zigzags
+- Concentric circles and squares
+- Random geometric shapes
+- Mixed pattern combinations
+
+**Advantages:**
+- ✅ Perfect for pattern learning
+- ✅ No color matching complexity
+- ✅ Unlimited variations
+- ✅ Fast generation (no downloads)
+- ✅ Clean, noise-free patterns
 
 ## Usage
 

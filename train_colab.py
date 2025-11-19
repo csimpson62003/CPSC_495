@@ -18,68 +18,29 @@ from main.train_inpainting import train_inpainting
 
 
 def auto_download_dataset():
-    """Auto-download COCO dataset if no images found."""
-    import urllib.request
-    import zipfile
-    import shutil
-    from pathlib import Path
+    """Auto-generate pattern dataset if no images found."""
+    from generate_patterns import generate_pattern_dataset
     
-    print("\n📦 Auto-downloading COCO dataset...")
-    print("   Dataset: COCO val2017 (5000 diverse images)")
-    print("   Size: ~1GB")
-    print("   Content: Natural scenes, objects, people, animals")
+    print("\n🎨 Auto-generating pattern dataset...")
+    print("   Dataset: Synthetic geometric patterns")
+    print("   Images: 5000")
+    print("   Content: Checkers, stripes, dots, grids, waves, shapes")
     print()
     
-    url = "http://images.cocodataset.org/zips/val2017.zip"
-    zip_path = "val2017.zip"
-    extract_dir = "val2017"
-    
     try:
-        # Download
-        print("⬇️  Downloading... (this may take 5-10 minutes)")
-        
-        def progress_hook(block_num, block_size, total_size):
-            downloaded = block_num * block_size
-            percent = min(100, (downloaded / total_size) * 100)
-            mb_down = downloaded / 1024 / 1024
-            mb_total = total_size / 1024 / 1024
-            print(f"\r   Progress: {percent:.1f}% ({mb_down:.1f} MB / {mb_total:.1f} MB)", end='')
-        
-        urllib.request.urlretrieve(url, zip_path, progress_hook)
-        print("\n✅ Download complete!")
-        
-        # Extract
-        print("📂 Extracting images...")
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall()
-        print("✅ Extraction complete!")
-        
-        # Move to data/
-        print("📁 Organizing images...")
-        data_dir = Path('data')
-        source_dir = Path(extract_dir)
-        
-        images = list(source_dir.glob('*.jpg'))
-        for i, img_path in enumerate(images[:5000]):
-            shutil.copy2(img_path, data_dir / img_path.name)
-            if (i + 1) % 500 == 0:
-                print(f"   Copied {i + 1}/{len(images)} images...")
-        
-        print(f"✅ {len(list(data_dir.glob('*.jpg')))} images ready!")
-        
-        # Cleanup
-        print("🧹 Cleaning up...")
-        if os.path.exists(zip_path):
-            os.remove(zip_path)
-        if os.path.exists(extract_dir):
-            shutil.rmtree(extract_dir)
-        
-        print("✅ Dataset download complete!\n")
+        # Generate patterns
+        print("🎨 Generating patterns... (this will take 1-2 minutes)")
+        generate_pattern_dataset(
+            output_dir='data',
+            num_images=5000,
+            size=128
+        )
+        print("\n✅ Pattern generation complete!")
         return True
         
     except Exception as e:
-        print(f"\n❌ Download failed: {e}")
-        print("\nPlease manually add images to data/ folder")
+        print(f"\n❌ Pattern generation failed: {e}")
+        print("\nPlease manually run: python generate_patterns.py")
         return False
 
 
@@ -126,12 +87,12 @@ def main():
     config = {
         'checkpoint_path': checkpoint_path,
         'dataset_path': dataset_path,
-        'batch_size': 32,
-        'num_epochs': 2000,
+        'batch_size': 64,
+        'num_epochs': 100,
         'lr': 1e-4,
         'num_time_steps': 1000,
         'max_dataset_size': None,  # Use all images
-        'save_every_n_epochs': 100,
+        'save_every_n_epochs': 10,
         'image_size': 128
     }
     
@@ -140,8 +101,8 @@ def main():
         print(f"   {key}: {value}")
     
     print("\n🎓 Starting training process...")
-    print("   This may take several hours depending on your hardware.")
-    print("\n💡 Checkpoints will be saved every 100 epochs")
+    print("   This will run for 100 epochs to test if it's working.")
+    print("\n💡 Checkpoints will be saved every 10 epochs")
     print("   Monitor the loss - it should decrease steadily!")
     
     # Start training
