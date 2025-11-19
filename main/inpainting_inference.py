@@ -17,12 +17,12 @@ from .utils import setup_cuda_device
 
 
 def load_and_preprocess_image(image_path: str, size: int = 16):
-    image = Image.open(image_path).convert('RGB')
+    image = Image.open(image_path).convert('L')
     
     transform = transforms.Compose([
         transforms.Resize((size, size), interpolation=transforms.InterpolationMode.LANCZOS),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+        transforms.Normalize(mean=[0.5], std=[0.5])
     ])
     
     return transform(image).unsqueeze(0)
