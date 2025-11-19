@@ -22,9 +22,8 @@ class InpaintingDataset(Dataset):
         
         self.transform = transforms.Compose([
             transforms.Resize((image_size, image_size), interpolation=transforms.InterpolationMode.LANCZOS),
-            transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5], std=[0.5])
+            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
         ])
     
     def _find_images(self, dataset_path):
@@ -91,10 +90,11 @@ class InpaintingDataset(Dataset):
     
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
-        image = Image.open(img_path).convert('L')
+        image = Image.open(img_path).convert('RGB')
         image_tensor = self.transform(image)
         
         mask = self.create_random_mask(self.image_size)
+        # Use gray (0.0) instead of black (-1.0) for masked regions to distinguish from black pattern areas
         masked_image = image_tensor * mask + torch.zeros_like(image_tensor) * (1 - mask)
         
         return {

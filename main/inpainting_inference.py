@@ -17,12 +17,12 @@ from .utils import setup_cuda_device
 
 
 def load_and_preprocess_image(image_path: str, size: int = 16):
-    image = Image.open(image_path).convert('L')
+    image = Image.open(image_path).convert('RGB')
     
     transform = transforms.Compose([
         transforms.Resize((size, size), interpolation=transforms.InterpolationMode.LANCZOS),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5])
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])
     
     return transform(image).unsqueeze(0)
@@ -107,8 +107,37 @@ def inpaint_image(image_path: str,
                 x = pred_x0
         
         result = x
+        
+        # Quantize to pure RED and BLUE colors in masked regions
+        result = quantize_to_red_blue(result, mask, device)
     
     display_results(image, masked_image, mask, result, save_result)
+    
+    return result
+
+
+def quantize_to_red_blue(image, mask, device):
+    """
+    Snap pixels in masked regions to pure RED or BLUE.
+    Uses Euclidean distance to determine closest color.
+    """
+    # Define pure colors in normalized space [-1, 1]
+    # RED = (1, -1, -1) and BLUE = (-1, -1, 1)
+    RED = torch.tensor([1.0, -1.0, -1.0], device=device).view(1, 3, 1, 1)
+    BLUE = torch.tensor([-1.0, -1.0, 1.0], device=device).view(1, 3, 1, 1)
+    
+    # Calculate distances to RED and BLUE
+    dist_to_red = torch.sum((image - RED) ** 2, dim=1, keepdim=True)
+    dist_to_blue = torch.sum((image - BLUE) ** 2, dim=1, keepdim=True)
+    
+    # Create mask for pixels closer to red
+    closer_to_red = dist_to_red < dist_to_blue
+    
+    # Create quantized version
+    quantized = torch.where(closer_to_red.expand_as(image), RED.expand_as(image), BLUE.expand_as(image))
+    
+    # Apply quantization only to masked regions (1 - mask are the inpainted areas)
+    result = image * mask + quantized * (1 - mask)
     
     return result
 
