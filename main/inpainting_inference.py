@@ -39,7 +39,7 @@ def load_mask(mask_path: str, size: int = 16):
 def inpaint_image(image_path: str,
                   mask_path: str,
                   checkpoint_path: str = 'checkpoints/inpainting_checkpoint',
-                  num_denoising_steps: int = 50,
+                  num_denoising_steps: int = 100,
                   save_result: str = None):
     
     device = setup_cuda_device(preferred_gpu=0)
@@ -107,9 +107,6 @@ def inpaint_image(image_path: str,
                 x = pred_x0
         
         result = x
-        
-        # Quantize to pure RED and BLUE colors in masked regions
-        result = quantize_to_red_blue(result, mask, device)
     
     display_results(image, masked_image, mask, result, save_result)
     

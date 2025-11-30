@@ -87,13 +87,13 @@ def main():
     config = {
         'checkpoint_path': checkpoint_path,
         'dataset_path': dataset_path,
-        'batch_size': 64,
-        'num_epochs': 100,
+        'batch_size': 32,
+        'num_epochs': 200,
         'lr': 1e-4,
         'num_time_steps': 1000,
         'max_dataset_size': None,  # Use all images
         'save_every_n_epochs': 20,
-        'image_size': 32
+        'image_size': 128
     }
     
     print("\n📋 Training Configuration:")

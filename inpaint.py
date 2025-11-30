@@ -57,7 +57,7 @@ def main():
             image_path=image_path,
             mask_path=mask_path,
             checkpoint_path=checkpoint_path,
-            num_denoising_steps=50,
+            num_denoising_steps=100,  # Increased for better quality
             save_result=output_file
         )
         
