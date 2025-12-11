@@ -96,24 +96,8 @@ def main():
         'image_size': 128
     }
     
-    print("\n📋 Training Configuration:")
-    for key, value in config.items():
-        print(f"   {key}: {value}")
-    
-    print("\n🎓 Starting training process...")
-    print("   This will run for 100 epochs to test if it's working.")
-    print("\n💡 Checkpoints will be saved every 10 epochs")
-    print("   Monitor the loss - it should decrease steadily!")
-    
     # Start training
-    train_inpainting(**config)
-    
-    print("\n" + "=" * 60)
-    print("🎉 Training Complete!")
-    print("💾 Model saved to: checkpoints/inpainting_checkpoint")
-    print("🧪 Test it with: python inpaint.py")
-
-
+    train_inpainting(config)
 
 if __name__ == "__main__":
     main()
